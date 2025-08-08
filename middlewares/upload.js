@@ -7,8 +7,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // dossier où stocker les images
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const fileName = `${Date.now()}${ext}`;
+    const fileName = `${Date.now()}`+ '.jpg';
     cb(null, fileName);
   }
 });
@@ -26,6 +25,6 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ storage, fileFilter });
+const upload = multer({ storage });
 
 module.exports = upload;

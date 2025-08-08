@@ -19,13 +19,23 @@ mongoose.connect(process.env.MONGO_URI)
 
 //
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.get("/", (req, res) =>{
-    res.send("it's working ");
+    res.send("it's working ! ");
 })
 
 //auth routes
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
+
+
+//vehicle routes
+const vehicleRoutes = require('./routes/vehicleRoutes');
+app.use('/api/vehicles', vehicleRoutes);
+
+//driver routes
+const driverRoutes = require('./routes/driverRoutes');
+app.use('/api/drivers', driverRoutes);
 
 //
 const PORT = process.env.PORT || 5000;
