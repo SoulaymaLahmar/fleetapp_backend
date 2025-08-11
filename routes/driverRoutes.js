@@ -7,5 +7,6 @@ const verifyToken = require('../middlewares/verifyToken');
 router.get('/', auth, driverController.getAllDrivers);
 router.post('/', verifyToken, driverController.addDriver);
 router.delete('/:id', verifyToken, driverController.deleteDriver);
+router.patch('/:id/status', verifyToken, driverController.updateDriver);
 
 module.exports = router;

@@ -45,9 +45,30 @@ exports.deleteDriver = async (req, res) => {
       
     }
 
-    await driver.remove();
+    await driver.deleteOne();
     res.status(200).json({ message: 'Chauffeur supprimé' });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
+
+// PATCH /api/drivers/:id/status - update driver status
+exports.updateDriver = async (req, res) => {
+  try {
+    const driver = await Driver.findById(req.params.id);
+    if (!driver) return res.status(404).json({ message: 'chauffeur non trouvé' });
+
+    const { statut } = req.body; 
+    if (!['Disponible', 'Occupé', 'Inactif'].includes(statut)) {
+      return res.status(400).json({ message: 'État invalide' });
+    }
+
+    driver.statut = statut;
+    const updatedDriver = await driver.save();
+
+    res.json(updatedDriver);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
