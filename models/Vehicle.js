@@ -13,8 +13,6 @@ const vehicleSchema = new mongoose.Schema({
   responsable: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: Date, default: Date.now },
-
-  // 📌 Réels tableaux
   historiqueEntretiens: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Entretien'
@@ -22,7 +20,8 @@ const vehicleSchema = new mongoose.Schema({
   entretiensAVenir: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Entretien'
-  }]
+  }],
+  coutVehicle: { type: Number, default: 0 }
 
 }, {
   timestamps: true

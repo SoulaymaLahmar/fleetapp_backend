@@ -1,4 +1,6 @@
 const Driver = require('../models/Driver');
+const Notification = require('../models/Notification');
+
 
 // Get all drivers for logged-in user
 exports.getAllDrivers = async (req, res) => {
@@ -12,7 +14,6 @@ exports.getAllDrivers = async (req, res) => {
 
 // Add driver for logged-in user
 exports.addDriver = async (req, res) => {
-    console.log('User from token:', req.user);
   try {
     const { nom, prenom, permis, telephone, statut, photo } = req.body;
 
@@ -27,11 +28,20 @@ exports.addDriver = async (req, res) => {
     });
 
     const savedDriver = await newDriver.save();
+
+    await Notification.create({
+      title: 'Nouveau conducteur ajouté',
+      message: `Le conducteur ${savedDriver.nom} ${savedDriver.prenom} a été ajouté.`,
+      type: 'driver',
+      user: req.user.userId
+    });
+
     res.status(201).json(savedDriver);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
+
 
 // Delete a driver if owned by logged-in user
 exports.deleteDriver = async (req, res) => {

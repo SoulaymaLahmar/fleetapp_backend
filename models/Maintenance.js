@@ -1,4 +1,4 @@
-
+// models/Entretien.js
 const mongoose = require('mongoose');
 
 const entretienSchema = new mongoose.Schema({
@@ -7,14 +7,19 @@ const entretienSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  date: {
-    type: Date,
-    required: true
-  },
   cout: {
     type: Number,
     required: true,
     min: 0
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  statut: {
+    type: String,
+    enum: ['planifie', 'en_cours', 'termine', 'annule'],
+    default: 'planifie'
   },
   description: {
     type: String,
@@ -25,21 +30,31 @@ const entretienSchema = new mongoose.Schema({
     ref: 'Vehicle',
     required: true
   },
-  statut: {
-    type: String,
-    enum: ['planifie', 'en_cours', 'termine'],
-    default: 'planifie'
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  technicien: {
-    type: String,
-    trim: true
+  dateCreation: {
+    type: Date,
+    default: Date.now
   },
-  notes: {
-    type: String,
-    trim: true
+  dateModification: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
 });
+
+// Middleware pour mettre à jour dateModification
+entretienSchema.pre('save', function(next) {
+  this.dateModification = new Date();
+  next();
+});
+
+// Index pour optimiser les requêtes
+entretienSchema.index({ vehicule: 1, date: 1 });
+entretienSchema.index({ vehicule: 1, statut: 1 });
 
 module.exports = mongoose.model('Entretien', entretienSchema);

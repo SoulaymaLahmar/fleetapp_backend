@@ -1,6 +1,8 @@
 const Vehicle = require('../models/Vehicle');
 const Driver = require('../models/Driver');
 const Entretien = require('../models/Maintenance');
+const Notification = require('../models/Notification');
+
 
 // GET all vehicles for the user
 exports.getAllVehicles = async (req, res) => {
@@ -48,6 +50,12 @@ exports.addVehicle = async (req, res) => {
   try {
     const { marque, modele, numeroSerie, etat, type, kilometrage, carburant, consommation, image } = req.body;
 
+    // Vérifier duplication numeroSerie
+    const existing = await Vehicle.findOne({ numeroSerie });
+    if (existing) {
+      return res.status(400).json({ error: 'Ce numéro de série existe déjà' });
+    }
+
     const newVehicle = new Vehicle({
       marque,
       modele,
@@ -62,11 +70,23 @@ exports.addVehicle = async (req, res) => {
     });
 
     const savedVehicle = await newVehicle.save();
+
+    await Notification.create({
+      title: 'Nouveau véhicule ajouté',
+      message: `Le véhicule ${savedVehicle.marque} ${savedVehicle.modele} a été ajouté.`,
+      type: 'vehicle',
+      user: req.user.userId
+    });
+
     res.status(201).json(savedVehicle);
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Numéro de série déjà utilisé' });
+    }
     res.status(400).json({ error: err.message });
   }
 };
+
 
 // DELETE a vehicle and its related entretiens
 exports.deleteVehicle = async (req, res) => {
@@ -165,7 +185,11 @@ exports.addEntretien = async (req, res) => {
     });
 
     await newEntretien.save();
-
+    await Notification.create({
+      title: 'Nouveau entretien ajouté',
+      message: `${newEntretien.type} ${newEntretien.date} a été ajouté.`,
+      type: 'vehicle'
+    });
     // Récupérer les listes mises à jour des entretiens
     const entretiensAVenir = await Entretien.find({
       vehicule: vehicleId,
