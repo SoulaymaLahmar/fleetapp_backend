@@ -40,6 +40,11 @@ app.use('/api/drivers', driverRoutes);
 const notificationRoutes = require('./routes/notificationRoutes')
 app.use('/api/notifications', notificationRoutes)
 
+//statistics routes 
+const statisticsRoutes = require('./routes/statsRoutes')
+app.use('/api/statistics', statisticsRoutes);
+
+
 //
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

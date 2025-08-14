@@ -4,14 +4,14 @@ exports.getallnotifications = async (req, res) => {
   try {
     const notifications = await Notification.find().sort({ createdAt: -1 });
 
-    // Convertir chaque document en JSON “simple”
+    // convertir en JSON simple
     const plainNotifications = notifications.map(n => ({
-      id: n._id.toString(),               // convertir ObjectId en string
+      id: n._id.toString(),     
       title: n.title,
       message: n.message,
       type: n.type,
       isRead: n.isRead,
-      createdAt: n.createdAt.toISOString(),  // convertir Date en string ISO
+      createdAt: n.createdAt.toISOString(),
     }));
 
     res.json(plainNotifications);
@@ -19,6 +19,7 @@ exports.getallnotifications = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 }
+
 exports.markallread = async (req, res) => {
   try {
     await Notification.updateMany({ user: req.user.userId }, { isRead: true });
