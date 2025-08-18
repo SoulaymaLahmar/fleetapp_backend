@@ -6,14 +6,12 @@ const Driver = require('../models/Driver');
 
 //GET
 exports.getStatisticsSummary = async (req, res) => {
-    try {
+  try {
     const userId = req.user.userId;
     const { period = 'month' } = req.query;
 
-    // Calculate date range based on period
     const now = new Date();
     let startDate;
-    
     switch (period) {
       case '3months':
         startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
@@ -24,97 +22,46 @@ exports.getStatisticsSummary = async (req, res) => {
       case 'year':
         startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
         break;
-      default: // month
+      default:
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    // Get all user's vehicles
     const vehicles = await Vehicle.find({ user: userId });
     const vehicleIds = vehicles.map(v => v._id);
 
-    // Get maintenance records for the period
     const maintenanceRecords = await Entretien.find({
       user: userId,
       date: { $gte: startDate, $lte: now }
     });
 
-    // Calculate total costs
     const totalVehicleCosts = vehicles.reduce((sum, vehicle) => sum + (vehicle.coutVehicle || 0), 0);
     const totalMaintenanceCosts = maintenanceRecords.reduce((sum, maintenance) => sum + maintenance.cout, 0);
     const totalCost = totalVehicleCosts + totalMaintenanceCosts;
 
-    // Calculate total distance
     const totalDistance = vehicles.reduce((sum, vehicle) => sum + vehicle.kilometrage, 0);
 
-    // Count active vehicles
     const activeVehicles = vehicles.filter(v => v.etat === 'En service').length;
+    const brokenVehicles = vehicles.filter(v => v.etat === 'Hors service').length;
+    const maintenanceVehicles = vehicles.filter(v => v.etat === 'En maintenance').length;
 
-    // Calculate average efficiency
-    const vehiclesWithConsumption = vehicles.filter(v => v.consommation > 0);
-    const averageEfficiency = vehiclesWithConsumption.length > 0
-      ? vehiclesWithConsumption.reduce((sum, vehicle) => {
-          // Calculate efficiency: lower consumption = higher efficiency
-          const baseConsumption = 10.0;
-          const efficiency = ((baseConsumption - vehicle.consommation) / baseConsumption * 100);
-          return sum + Math.max(0, Math.min(100, efficiency));
-        }, 0) / vehiclesWithConsumption.length
-      : 0;
-
-    // Calculate cost breakdown
-    const costBreakdown = {
-      carburant: maintenanceRecords
-        .filter(m => m.type.toLowerCase().includes('carburant'))
-        .reduce((sum, m) => sum + m.cout, 0),
-      entretien: maintenanceRecords
-        .filter(m => !['carburant', 'assurance', 'réparation'].some(keyword => 
-          m.type.toLowerCase().includes(keyword)))
-        .reduce((sum, m) => sum + m.cout, 0),
-      assurance: maintenanceRecords
-        .filter(m => m.type.toLowerCase().includes('assurance'))
-        .reduce((sum, m) => sum + m.cout, 0),
-      reparation: maintenanceRecords
-        .filter(m => m.type.toLowerCase().includes('réparation'))
-        .reduce((sum, m) => sum + m.cout, 0)
-    };
-
-    // Generate monthly trends for the last 6 months
-    const monthlyTrends = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      
-      const monthMaintenanceRecords = await Entretien.find({
-        user: userId,
-        date: { $gte: monthStart, $lte: monthEnd }
-      });
-
-      const monthCost = monthMaintenanceRecords.reduce((sum, m) => sum + m.cout, 0);
-      
-      // Calculate approximate distance for the month (simplified calculation)
-      const monthKm = totalDistance / 6; // Approximate equal distribution
-      
-      monthlyTrends.push({
-        month: monthStart.toLocaleString('fr-FR', { month: 'short' }),
-        cost: monthCost,
-        km: monthKm
-      });
-    }
+    // existing code...
 
     res.json({
-      totalCost,
-      totalDistance,
+      totalVehicles: vehicles.length,
       activeVehicles,
-      averageEfficiency,
-      costBreakdown,
-      monthlyTrends
+      brokenVehicles,
+      maintenanceVehicles,
+      totalCost,
+      totalDistance
+      // plus whatever other stats you return
     });
 
   } catch (error) {
     console.error('Error fetching statistics summary:', error);
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
+};
 
-}
 
 //GET
 exports.performanceStats = async (req, res) =>{

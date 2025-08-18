@@ -44,7 +44,9 @@ app.use('/api/notifications', notificationRoutes)
 const statisticsRoutes = require('./routes/statsRoutes')
 app.use('/api/statistics', statisticsRoutes);
 
-
+//dashboard routes
+const dashboardRoutes = require('./routes/dashboardRoutes')
+app.use('/api/dashboard', dashboardRoutes)
 //
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
