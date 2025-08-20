@@ -1,4 +1,3 @@
-// models/Entretien.js
 const mongoose = require('mongoose');
 
 const entretienSchema = new mongoose.Schema({
@@ -47,13 +46,11 @@ const entretienSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Middleware pour mettre à jour dateModification
 entretienSchema.pre('save', function(next) {
   this.dateModification = new Date();
   next();
 });
 
-// Index pour optimiser les requêtes
 entretienSchema.index({ vehicule: 1, date: 1 });
 entretienSchema.index({ vehicule: 1, statut: 1 });
 

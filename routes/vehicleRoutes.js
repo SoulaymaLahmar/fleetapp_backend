@@ -6,7 +6,8 @@ const auth = require('../middlewares/authMiddleware');
 const Entretien = require('../models/Maintenance');
 const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
-
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 
 router.use(auth); //use it to all routes
@@ -14,7 +15,7 @@ router.use(auth); //use it to all routes
 // Vehicle routes
 router.get('/', vehicleController.getAllVehicles);
 router.get('/:id', vehicleController.getVehicleById);
-router.post('/', vehicleController.addVehicle);
+router.post('/', upload.single('image'),vehicleController.addVehicle);
 router.delete('/:id', vehicleController.deleteVehicle);
 router.patch('/:id/status', vehicleController.updateVehicle);
 

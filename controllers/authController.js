@@ -4,23 +4,43 @@ const jwt = require('jsonwebtoken');
 
 //creer un compte 
 exports.register = async (req, res) => {
-    const {name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-    try{
-        const exist = await User.findOne({email});
-        if (exist) return res.status(400).json({message: 'user already exists'});
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({name, email, password: hashedPassword});
-        await user.save();
-
-        res.status(201).json({message: 'user registered successfully'});
-
-    } catch(err){
-        res.status(500).json({message: 'server error', error: err.message})
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Champs requis manquants" });
     }
-       
+
+    const exist = await User.findOne({ email });
+    if (exist) return res.status(400).json({ message: "User already exists" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const photo = req.file ? `/uploads/${req.file.filename}` : '';
+
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      profileImage: photo,
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
 };
+
 
 //se connecter
 exports.login = async (req, res) =>{
@@ -30,24 +50,36 @@ exports.login = async (req, res) =>{
         const user = await User.findOne({email});
         if(!user) return res.status(404).json({message: 'user not found'});
 
+        // DEBUG: Log the user data
+        console.log('=== BACKEND USER DEBUG ===');
+        console.log('User from DB:', user);
+        console.log('ProfileImage:', user.profileImage);
+        console.log('========================');
+
         const isMatch = await bcrypt.compare(password, user.password);
         if(!isMatch) return res.status(400).json({message: 'invalid password'});
 
         const token = jwt.sign({ userId: user._id}, process.env.JWT_SECRET, {expiresIn: '1d'});
+        
+        const responseUser = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            profileImage: user.profileImage || ''
+        };
+        
+        // DEBUG: Log what we're sending
+        console.log('Response user:', responseUser);
+        
         res.json({
             message: 'login successful',
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email
-            }
+            user: responseUser
         })
     }catch (err){
         res.status(500).json({message: 'server error', error: err.message})
     }
 };
-
 // mise a jour du profile (edit profile screen)
 exports.updateProfile = async (req, res) => {
     const {name, email, phone} = req.body;
@@ -69,13 +101,13 @@ exports.updateProfile = async (req, res) => {
                 name: updatedUser.name,
                 email: updatedUser.email,
                 phone: updatedUser.phone || '',
+                profileImage: updatedUser.profileImage || '' 
             },
         });
     } catch(err) {
         res.status(500).json({ message: 'erreur serveur', error: err.message});
     }
 };
-
 
 exports.updateProfileImage = async (req, res) => {
   try {
@@ -102,10 +134,14 @@ exports.updateProfileImage = async (req, res) => {
         email: updatedUser.email,
         phone: updatedUser.phone || '',
         profileImage: updatedUser.profileImage || ''
-  }
+      }
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Erreur serveur' });
+    console.error('Error updating profile image:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur serveur', 
+      error: err.message 
+    });
   }
 };

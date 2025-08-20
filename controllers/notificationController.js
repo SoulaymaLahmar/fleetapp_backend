@@ -2,11 +2,9 @@ const Notification = require ('../models/Notification');
 
 exports.getallnotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find().sort({ createdAt: -1 });
-
-    // convertir en JSON simple
+    const notifications = await Notification.find({user: req.user.userId}).sort({ createdAt: -1 });
     const plainNotifications = notifications.map(n => ({
-      id: n._id.toString(),     
+      id: n._id.toString(),             
       title: n.title,
       message: n.message,
       type: n.type,
@@ -19,7 +17,6 @@ exports.getallnotifications = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 }
-
 exports.markallread = async (req, res) => {
   try {
     await Notification.updateMany({ user: req.user.userId }, { isRead: true });

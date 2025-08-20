@@ -4,6 +4,7 @@ const Entretien = require('../models/Maintenance');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 
+
 //vehicle controllers
 
 // GET /api/vehicles/
@@ -56,30 +57,40 @@ exports.getVehicleById = async (req, res) => {
 // POST /api/vehicles/
 exports.addVehicle = async (req, res) => {
   try {
-    const { marque, modele, numeroSerie, etat, type, kilometrage, carburant, consommation, image } = req.body;
+    // Multer middleware has already processed the form data
+    const { marque, modele, numeroSerie, etat, type, kilometrage, carburant, consommation, date } = req.body;
 
-    //numeroSerie unique 
+    // Validate required fields
+    if (!marque || !modele || !numeroSerie) {
+      return res.status(400).json({ error: 'Marque, modèle et numéro de série sont requis' });
+    }
+
+    // Check if numeroSerie is unique
     const existing = await Vehicle.findOne({ numeroSerie });
     if (existing) {
       return res.status(400).json({ error: 'Ce numéro de série existe déjà' });
     }
 
+    // Handle image path if file was uploaded
+    const imagePath = req.file ? req.file.filename : null;
+
     const newVehicle = new Vehicle({
-      marque,
-      modele,
-      numeroSerie,
-      etat,
-      type,
-      kilometrage,
-      carburant,
-      consommation,
-      image,
+      marque: marque.trim(),
+      modele: modele.trim(),
+      numeroSerie: numeroSerie.trim(),
+      etat: etat || 'En service',
+      type: type || 'Voiture',
+      date: date || new Date().toLocaleDateString('fr-FR'),
+      kilometrage: parseInt(kilometrage) || 0,
+      carburant: carburant || 'Essence',
+      consommation: parseFloat(consommation) || 0,
+      image: imagePath,
       user: req.user.userId,
     });
 
     const savedVehicle = await newVehicle.save();
     
-    //notification 
+    // Create notification 
     await Notification.create({
       title: 'Nouveau véhicule ajouté',
       message: `Le véhicule ${savedVehicle.marque} ${savedVehicle.modele} a été ajouté.`,
@@ -95,7 +106,6 @@ exports.addVehicle = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
-
 // DELETE /api/vehicles/:id
 exports.deleteVehicle = async (req, res) => {
   try {
@@ -311,7 +321,7 @@ exports.addEntretien = async(req, res) => {
       //notification 
       await Notification.create({
         title: 'Nouveau entretien ajouté',
-        message: `${savedEntretien.description} le ${savedEntretien.date} a été ajouté.`,
+        message: `L'entretien ${savedEntretien.type} pour le véhicule ${savedEntretien.vehicule} a été ajouté.`,
         type: 'entretien',
         user: req.user.userId
       });
